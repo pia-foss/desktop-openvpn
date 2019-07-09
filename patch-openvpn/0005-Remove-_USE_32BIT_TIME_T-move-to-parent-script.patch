@@ -1,0 +1,24 @@
+From 19152ae9aeabd585705016b354437661c079699b Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Fri, 8 Mar 2019 01:35:22 +0900
+Subject: [PATCH 05/10] Remove _USE_32BIT_TIME_T (move to parent script)
+
+---
+ msvc-env.bat | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/msvc-env.bat b/msvc-env.bat
+index aabed750..56b469f4 100644
+--- a/msvc-env.bat
++++ b/msvc-env.bat
+@@ -13,7 +13,6 @@ set SOURCEBASE=%cd%
+ set SOLUTION=openvpn.sln
+ set CPPFLAGS=%CPPFLAGS%;_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS
+ set CPPFLAGS=%CPPFLAGS%;NTDDI_VERSION=NTDDI_VISTA;_WIN32_WINNT=_WIN32_WINNT_VISTA
+-set CPPFLAGS=%CPPFLAGS%;_USE_32BIT_TIME_T
+ set CPPFLAGS=%CPPFLAGS%;%EXTRA_CPPFLAGS%
+ 
+ if exist config-msvc-local.h set CPPFLAGS="%CPPFLAGS%;HAVE_CONFIG_MSVC_LOCAL_H"
+-- 
+2.22.0
+

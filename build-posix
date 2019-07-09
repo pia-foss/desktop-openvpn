@@ -1,0 +1,191 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o pipefail
+# set -o nounset
+# set -o xtrace
+
+__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
+__base="$(basename ${__file} .sh)"
+# __root="$(cd "$(dirname "${__dir}")" && pwd)" # <-- change this as it depends on your app
+
+die() { echo "${__base}:" "$*" 1>&2 ; exit 1; }
+
+print_usage() {
+	cat <<-EOF
+                Usage: $0 [OPTIONS]
+		  --platform PLATFORM        specify target OS, where PLATFORM is one of:
+                                             linux32, linux64, macos, host
+                                             (default: host)
+
+	EOF
+}
+
+cd ${__dir}
+
+while (( "$#" )); do
+	case "$1" in
+		--platform)
+			platform="$2"
+			shift
+			;;
+		--platform=*)
+			platform="${1#*=}"
+                        ;;
+		--verbose | -v)
+			;;
+		--help)
+			print_usage
+			exit 0
+			;;
+                *)
+                        die "Unknown option \"$1\""
+                        ;;
+	esac
+	shift
+done
+
+case "$(uname)" in
+	Linux)
+		case "$(uname -m)" in
+			x86) host_platform=linux32 ;;
+			x86_64) host_platform=linux64 ;;
+			*) die "Unsupported host platform" ;;
+		esac
+		;;
+	FreeBSD)
+		case "$(uname -m)" in
+			x86) host_platform=freebsd32 ;;
+			x86_64) host_platform=freebsd64 ;;
+			*) die "Unsupported host platform" ;;
+		esac
+		;;
+	Darwin)
+		[ "$(uname -m)" = "x86_64" ] || die "Unsupported host platform"
+		host_platform=macos
+		libtoolize="glibtoolize"
+		;;
+	*)
+		die "Unsupported host platform"
+		;;
+esac
+[ -n "${platform}" ] || platform="host"
+[ "${platform}" = "host" ] && actual_platform="${host_platform}" || actual_platform="${platform}"
+
+openvpn_version="pia"
+openvpn_directory="${__dir}/build.tmp/openvpn-${openvpn_version}"
+openvpn_build_directory="${__dir}/build.tmp/openvpn-build"
+
+# To build with 1.1.0j; also remove the line later that deletes the 1.1.0j patch
+openssl_version="1.0.2p"
+
+output_directory="${__dir}/out/build/${platform}"
+artifacts_dir="${__dir}/out/artifacts/${platform}"
+
+rm -rf "${output_directory}" "${artifacts_dir}"
+mkdir -p "${output_directory}"
+mkdir -p "${artifacts_dir}"
+
+case "${actual_platform}" in
+	linux32)
+		export DO_REALLY_STATIC=1
+		export EXTRA_TARGET_CFLAGS="-m32"
+		export EXTRA_TARGET_LDFLAGS="-m32"
+		export EXTRA_OPENSSL_CONFIG="-m32"
+		export OPENSSL_FORCE32BIT=1
+		;;
+	linux64)
+		export DO_REALLY_STATIC=1
+		export EXTRA_TARGET_CFLAGS="-m64"
+		export EXTRA_TARGET_LDFLAGS="-m64"
+		export EXTRA_OPENSSL_CONFIG="-m64"
+		export OPENSSL_FORCE64BIT=1
+		;;
+	freebsd32)
+		;;
+	freebsd64)
+		die "Still unsupported"
+		;;
+	macos)
+		[ "$(uname)" = "Darwin" ] || die "Cross compilation to macOS not supported"
+		export DO_REALLY_STATIC=1
+                ;;
+	*)
+		die "Unknown platform"
+		;;
+esac
+
+# Local changes would be ignored by the build due to the clones below
+git -C ./openvpn diff-index --quiet HEAD -- || die "openvpn submodule is not clean, commit or revert changes before building"
+git -C ./openvpn-build diff-index --quiet HEAD -- || die "openvpn-build submodule is not clean, commit or revert changes before building"
+
+# Initialize clean OpenVPN sources for patching
+rm -rf ./build.tmp
+mkdir -p ./build.tmp
+git clone ./openvpn-build ${openvpn_build_directory}
+git clone ./openvpn ${openvpn_directory}
+
+echo "Applying OpenVPN build patches..."
+for p in ${__dir}/patch-openvpn-build-posix/*.patch; do
+        [ -f "$p" ] || continue # handle empty patch dir
+        echo "+ Applying $p..."
+        git -C "${openvpn_build_directory}" am "$p"
+done
+
+# Apply local patches to OpenVPN
+echo "Applying OpenVPN patches..."
+for p in ${__dir}/patch-openvpn/*.patch; do
+        [ -f "$p" ] || continue # handle empty patch dir
+        echo "+ Applying $p..."
+        git -C "${openvpn_directory}" am "$p"
+done
+
+# Keep openvpn-build from pulling any sources
+export LZO_URL=' '
+export OPENSSL_URL=' '
+export PKCS11_HELPER_URL=' '
+export TAP_WINDOWS_URL=' '
+export OPENVPN_URL=' '
+export OPENVPN_GUI_URL=' '
+
+# Tell openvpn-build where the checkout is
+export OPENVPN_VERSION="${openvpn_version}"
+# Forward other parameters
+export OPENSSL_VERSION="${openssl_version}"
+# Extra openvpn-build options
+export EXTRA_OPENVPN_CONFIG="--enable-password-save --enable-management --disable-server --disable-debug --disable-silent-rules --disable-plugins --disable-plugin-auth-pam --disable-plugin-down-root"
+
+# Remove patch for OpenSSL 1.1.0j (building with 1.0.2p currently)
+rm -f "${openvpn_build_directory}/generic/patches/openssl-1.1.0j-issue7653.patch"
+
+# Configure openvpn-build
+echo "Configuring OpenVPN build..."
+rm -f "${openvpn_directory}/configure"
+[ -f "${openvpn_directory}/configure" ] || ( cd "${openvpn_directory}" && "${libtoolize:-libtoolize}" --force && aclocal && autoconf && autoheader && automake --force-missing --add-missing && autoreconf -v -i -f )
+
+# Package sources into tarball where openvpn-build expects it
+echo "Packaging sources..."
+mkdir "${openvpn_build_directory}/generic/sources"
+( cd ./build.tmp && tar cf "${openvpn_build_directory}/generic/sources/openvpn-${OPENVPN_VERSION}.tar" "openvpn-pia" )
+
+# Copy other source archives
+cp ./source-archives/* "${openvpn_build_directory}/generic/sources"
+# - There's a dummy OpenVPN GUI archive placeholder in source-archives-posix/
+#   because the openvpn-build has a dumb check that it has exactly 6 archives,
+#   even though we won't be building the GUI or TAP adapter for Mac/Linux.
+# - The Mac/Linux build expects a built TAP adapter, not a source archive like
+#   on Windows, and it actually uses headers from this package
+cp ./source-archives-posix/* "${openvpn_build_directory}/generic/sources"
+
+# Execute main openvpn-build script
+echo "Building OpenVPN..."
+rm -rf "${openvpn_build_directory}/generic/tmp"
+( cd "${openvpn_build_directory}/generic" && IMAGEROOT="${output_directory}" PIA_PLATFORM="${actual_platform}" ./build )
+
+cp "${output_directory}/openvpn/sbin/openvpn" "${artifacts_dir}/pia-openvpn"
+
+# Done!
+echo "Build completed:"
+ls -ld "${artifacts_dir}"
+exit 0

@@ -1,0 +1,6 @@
+[submodule "openvpn-build"]
+	path = openvpn-build
+	url = https://github.com/OpenVPN/openvpn-build.git
+[submodule "openvpn"]
+	path = openvpn
+	url = https://github.com/OpenVPN/openvpn.git

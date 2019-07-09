@@ -1,0 +1,28 @@
+From 73a27a75deef272d1ca173a371ca035d771d3001 Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Thu, 21 Mar 2019 10:07:06 -0400
+Subject: [PATCH 4/4] Fix source archive check for TAP adapter
+
+---
+ msvc/build.bat | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/msvc/build.bat b/msvc/build.bat
+index b434c33..640e339 100644
+--- a/msvc/build.bat
++++ b/msvc/build.bat
+@@ -92,7 +92,10 @@ for %%f in (%download_list%) do (
+ 	for /f %%i in ("!URL!") do set NAME=%%~ni%%~xi
+ 	set found=
+ 	for %%i in (sources\%%f*) do set found=1
+-	if "!found!" == "" (
++	rem The sources\%%f* check doesn't work for the TAP adapter because its
++	rem archive doesn't start with "tap".
++	rem if "!found!" == "" (
++	if not exist sources/!NAME! (
+ 		echo Downloading !URL!
+ 		cscript //nologo wget.js !URL! sources/!NAME!
+ 		if errorlevel 1 goto error
+-- 
+2.18.0.windows.1
+

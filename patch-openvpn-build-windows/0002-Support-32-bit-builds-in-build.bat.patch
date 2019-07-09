@@ -1,0 +1,81 @@
+From 2db166d17256737b4b8f8041d9c2e0a625e90014 Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Thu, 21 Mar 2019 09:59:56 -0400
+Subject: [PATCH 2/4] Support 32-bit builds in build.bat
+
+---
+ msvc/build.bat | 33 ++++++++++++++++++++++++---------
+ 1 file changed, 24 insertions(+), 9 deletions(-)
+
+diff --git a/msvc/build.bat b/msvc/build.bat
+index 9e249dc..8beca02 100644
+--- a/msvc/build.bat
++++ b/msvc/build.bat
+@@ -33,12 +33,25 @@ SET ROOT=%CD%
+ call build-env.bat
+ if exist build-env-local.bat call build-env-local.bat
+ 
++if "%BITS%" == "32" (
++	set VCVARS_ARCH=x86
++	set OPENSSL_ARCH=VC-WIN32
++	set OPENSSL_BAT=do_nasm.bat
++	set OPENVPN_ARCH=Win32
++) else (
++	set BITS=64
++	set VCVARS_ARCH=x64
++	set OPENSSL_ARCH=VC-WIN64A
++	set OPENSSL_BAT=do_win64a.bat
++	set OPENVPN_ARCH=x64
++)
++
+ if exist "%VCHOME%\vcvarsall.bat" (
+-	call "%VCHOME%\vcvarsall.bat"
+-) else if exist "%VCHOME%\bin\vcvars64.bat" (
+-	call "%VCHOME%\bin\vcvars64.bat"
+-) else if exist "%VCHOME%\Auxiliary\Build\vcvars64.bat" (
+-	call "%VCHOME%\Auxiliary\Build\vcvars64.bat"
++	call "%VCHOME%\vcvarsall.bat" %VCVARS_ARCH%
++) else if exist "%VCHOME%\bin\vcvars%BITS%.bat" (
++	call "%VCHOME%\bin\vcvars%BITS%.bat"
++) else if exist "%VCHOME%\Auxiliary\Build\vcvars%BITS%.bat" (
++	call "%VCHOME%\Auxiliary\Build\vcvars%BITS%.bat"
+ ) else (
+ 	echo Cannot detect visual studio environment
+ 	goto error
+@@ -100,9 +113,9 @@ if errorlevel 1 goto error
+ echo Build OpenSSL
+ 
+ cd build.tmp\openssl*
+-perl Configure VC-WIN64A --prefix="%TARGET%"
++perl Configure %OPENSSL_ARCH% --prefix="%TARGET%"
+ if errorlevel 1 goto error
+-call ms\do_win64a.bat
++call ms\%OPENSSL_BAT%
+ if errorlevel 1 goto error
+ nmake -f ms\ntdll.mak
+ if errorlevel 1 goto error
+@@ -113,7 +126,7 @@ cd %ROOT%
+ echo Build LZO
+ 
+ cd build.tmp\lzo*
+-call B\win64\vc_dll.bat
++call B\win%BITS%\vc_dll.bat
+ rem if errorlevel 1 goto error - returns 1!!
+ xcopy include\lzo "%TARGET%\include\lzo" /e /i /y
+ if errorlevel 1 goto error
+@@ -155,9 +168,11 @@ echo Build OpenVPN
+ cd build.tmp\openvpn*
+ if exist "%ROOT%\config\config-msvc-local.h" copy "%ROOT%\config\config-msvc-local.h" .
+ set OPENVPN_DEPROOT=%TARGET%
++set PLATFORMS=%OPENVPN_ARCH%
++set CONFIGURATIONS=%RELEASE%
+ call msvc-build.bat
+ if errorlevel 1 goto error
+-copy "x64-Output\%RELEASE%"\*.exe "%TARGET%\bin"
++copy "%OPENVPN_ARCH%-Output\%RELEASE%"\*.exe "%TARGET%\bin"
+ if errorlevel 1 goto error
+ copy include\openvpn-*.h "%TARGET%\include"
+ if errorlevel 1 goto error
+-- 
+2.18.0.windows.1
+

@@ -1,0 +1,27 @@
+From 58bbc82a0d42e40788885e5a0c561d9307e382d2 Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Fri, 22 Mar 2019 10:39:05 -0400
+Subject: [PATCH] No static libgcc on Mac OS
+
+---
+ generic/build.vars | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/generic/build.vars b/generic/build.vars
+index c293c70..d8e644d 100644
+--- a/generic/build.vars
++++ b/generic/build.vars
+@@ -38,7 +38,9 @@ if [ -n "${DO_REALLY_STATIC}" ]; then
+ 	export LDFLAGS="-Xcompiler -static"
+ fi
+ 
+-EXTRA_OPENSSL_CONFIG="${EXTRA_OPENSSL_CONFIG:--static-libgcc}" # uncomment if openvpn.exe fails to start with missing libgcc_s_sjlj-1.dll (win32)
++if [ "${PIA_PLATFORM}" != "macos" ]; then
++        EXTRA_OPENSSL_CONFIG="${EXTRA_OPENSSL_CONFIG:--static-libgcc}" # uncomment if openvpn.exe fails to start with missing libgcc_s_sjlj-1.dll (win32)
++fi
+ #EXTRA_LZO_CONFIG
+ #EXTRA_PKCS11_HELPER_CONFIG
+ #EXTRA_OPENVPN_CONFIG
+-- 
+2.17.1
+

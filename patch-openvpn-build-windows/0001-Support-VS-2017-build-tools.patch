@@ -1,0 +1,24 @@
+From 2b021eac677f116f05d647b338df1c2d5cc83a0f Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Thu, 21 Mar 2019 09:52:53 -0400
+Subject: [PATCH 1/4] Support VS 2017 build tools
+
+---
+ msvc/build-env.bat | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/msvc/build-env.bat b/msvc/build-env.bat
+index 86bfa10..1c611ce 100644
+--- a/msvc/build-env.bat
++++ b/msvc/build-env.bat
+@@ -21,6 +21,7 @@ if "%ProgramFiles(x86)%"=="" set ProgramFiles(x86)=%ProgramFiles%
+ if "%VSCOMNTOOLS%"=="" set VSCOMNTOOLS=%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools
+ if not exist "%VSCOMNTOOLS%" set VSCOMNTOOLS=%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools
+ if not exist "%VSCOMNTOOLS%" set VSCOMNTOOLS=%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools
++if not exist "%VSCOMNTOOLS%" set VSCOMNTOOLS=%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools
+ if "%VSHOME%"=="" SET VSHOME=%VSCOMNTOOLS%\..\..
+ if "%VCHOME%"=="" SET VCHOME=%VSHOME%\VC
+ 
+-- 
+2.18.0.windows.1
+
