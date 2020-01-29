@@ -1,0 +1,34 @@
+From 6fd1b4ae52e593abea7f64cb4a1f78406056a59c Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Wed, 6 Mar 2019 02:39:48 +0900
+Subject: [PATCH 03/12] Fix missing lib
+
+---
+ src/openvpn/openvpn.vcxproj | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/openvpn/openvpn.vcxproj b/src/openvpn/openvpn.vcxproj
+index db00bbe7..1846ad7e 100644
+--- a/src/openvpn/openvpn.vcxproj
++++ b/src/openvpn/openvpn.vcxproj
+@@ -64,7 +64,7 @@
+       <AdditionalIncludeDirectories>$(SOURCEBASE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+     </ResourceCompile>
+     <Link>
+-      <AdditionalDependencies>libssl.lib;libcrypto.lib;lzo2.lib;pkcs11-helper.dll.lib;gdi32.lib;ws2_32.lib;wininet.lib;crypt32.lib;iphlpapi.lib;winmm.lib;Fwpuclnt.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>libssl.lib;libcrypto.lib;lzo2.lib;pkcs11-helper.dll.lib;gdi32.lib;ws2_32.lib;wininet.lib;crypt32.lib;iphlpapi.lib;winmm.lib;Fwpuclnt.lib;Rpcrt4.lib;ncrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <AdditionalLibraryDirectories>$(OPENSSL_HOME)/lib;$(LZO_HOME)/lib;$(PKCS11H_HOME)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+@@ -89,7 +89,7 @@
+       <AdditionalIncludeDirectories>$(SOURCEBASE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+     </ResourceCompile>
+     <Link>
+-      <AdditionalDependencies>libssl.lib;libcrypto.lib;lzo2.lib;pkcs11-helper.dll.lib;gdi32.lib;ws2_32.lib;wininet.lib;crypt32.lib;iphlpapi.lib;winmm.lib;Fwpuclnt.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>libssl.lib;libcrypto.lib;lzo2.lib;pkcs11-helper.dll.lib;gdi32.lib;ws2_32.lib;wininet.lib;crypt32.lib;iphlpapi.lib;winmm.lib;Fwpuclnt.lib;Rpcrt4.lib;ncrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <AdditionalLibraryDirectories>$(OPENSSL_HOME)/lib;$(LZO_HOME)/lib;$(PKCS11H_HOME)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+-- 
+2.23.0.windows.1
+

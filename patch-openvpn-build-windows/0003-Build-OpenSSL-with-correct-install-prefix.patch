@@ -1,56 +1,34 @@
-From a4217c726777615538251356f9f4da584d0838db Mon Sep 17 00:00:00 2001
+From 03edac64d59e826b4828a78429be2f4ce8c0af27 Mon Sep 17 00:00:00 2001
 From: Jonathon Hall <jhall@londontrustmedia.com>
 Date: Thu, 21 Mar 2019 10:04:35 -0400
-Subject: [PATCH 3/4] Build OpenSSL with correct install prefix
+Subject: [PATCH 3/5] Build OpenSSL with correct install prefix
 
 ---
- msvc/build.bat | 28 +++++++++++++++++++++++++---
- 1 file changed, 25 insertions(+), 3 deletions(-)
+ msvc/build.bat | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
 diff --git a/msvc/build.bat b/msvc/build.bat
-index 8beca02..b434c33 100644
+index 59441be..672ef54 100644
 --- a/msvc/build.bat
 +++ b/msvc/build.bat
-@@ -113,14 +113,36 @@ if errorlevel 1 goto error
+@@ -124,9 +124,15 @@ if errorlevel 1 goto error
  echo Build OpenSSL
  
  cd build.tmp\openssl*
--perl Configure %OPENSSL_ARCH% --prefix="%TARGET%"
-+rem mk1mf.pl also generates "unknown option" warnings when these args have
-+rem spaces in them (they're not quoted properly when passed through the
-+rem makefile), but these seem to be benign as long as we avoid a ' -'
-+rem (space-dash) sequence (which would be interpreted as a compiler argument)
-+perl Configure %OPENSSL_ARCH% --prefix="%OPENSSL_DIR%"
+-perl Configure %OPENSSL_ARCH% --prefix="%TARGET%" --openssldir="%TARGET%"\ssl
++perl Configure %OPENSSL_ARCH% --prefix="%TARGET%" --openssldir="%OPENSSL_DIR%"
  if errorlevel 1 goto error
- call ms\%OPENSSL_BAT%
- if errorlevel 1 goto error
- nmake -f ms\ntdll.mak
- if errorlevel 1 goto error
--nmake -f ms\ntdll.mak install
--if errorlevel 1 goto error
+-nmake install
 +
-+rem Copy the binaries to the install root.  Don't use make install - that
-+rem tries to copy to the installation prefix.
-+rem `--prefix="%TARGET%" --openssldir="%OPENSSL_DIR%` would _almost_ work,
-+rem except it still tries to install the config file to the config dir.
-+perl util/mkdir-p.pl %TARGET%\include\openssl
-+perl util/mkdir-p.pl %TARGET%\bin
-+perl util/mkdir-p.pl %TARGET%\lib\engines
-+perl util/copy.pl inc32\openssl\*.[ch] %TARGET%\include\openssl\
-+perl util/copy.pl out32dll\openssl.exe %TARGET%\bin\
-+rem Skip openssl.cnf, don't care about this
-+perl util/copy.pl out32dll\ssleay32.lib %TARGET%\lib
-+perl util/copy.pl out32dll\libeay32.lib %TARGET%\lib
-+rem All the DLLs are engines except for ssleay and libeay; put those in bin
-+perl util/copy.pl out32dll\*.dll %TARGET%\lib\engines
-+move /Y %TARGET%\lib\engines\ssleay32.dll %TARGET%\bin\ssleay32.dll
-+move /Y %TARGET%\lib\engines\libeay32.dll %TARGET%\bin\libeay32.dll
-+rem nmake -f ms\ntdll.mak install
-+rem if errorlevel 1 goto error
-+
- cd %ROOT%
++rem Skip the install_ssldirs target (one of the deps of install), since it tries
++rem to install config to OPENSSLDIR.  That directory doesn't exist at build
++rem time, and we don't care about those config files.
++rem
++rem 'install_sw' and 'install_docs' are the other deps of 'install'.
++nmake install_sw install_docs
+ if errorlevel 1 goto error
  
- echo Build LZO
+ if not exist "%TARGET%\libeay32.lib" (
 -- 
-2.18.0.windows.1
+2.23.0.windows.1
 

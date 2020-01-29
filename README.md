@@ -40,10 +40,9 @@ In the procedure below, do everything from the submodule directory (and in bash 
      * Mac/Linux: Run `build-posix`
    * Repeat 4+5 as many times as you need to
 6. Regenerate patches
-  * `git format-patch -<N> HEAD`, where `<N>` is the number of commits to use - count the commits between the OpenVPN release and HEAD
-  * `mv *.patch ../patch-openvpn-build/`
+   * `git format-patch -o ../patch-openvpn-build-windows/ v2.4.7`, where `v2.4.7` is the original commit that this submodule was on
 7. Revert submodule to original commit
-  * `git checkout v2.4.7` (or whatever version OpenVPN was on)
+   * `git checkout v2.4.7` (or whatever version OpenVPN was on)
   
 You can now check in your changes to the patches (and/or build-pia.bat, etc.)
 

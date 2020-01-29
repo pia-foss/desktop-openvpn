@@ -1,0 +1,27 @@
+From 9afd29b4be24e0752767105ae967c7baf528e516 Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Wed, 15 Jan 2020 13:53:14 -0500
+Subject: [PATCH 5/5] Fix OpenVPN build command in build.bat
+
+---
+ msvc/build.bat | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/msvc/build.bat b/msvc/build.bat
+index 7ce41d4..a3e112f 100644
+--- a/msvc/build.bat
++++ b/msvc/build.bat
+@@ -193,7 +193,9 @@ mkdir ..\..\%OPENVPN_BUILD_OPENVPN% > nul 2>&1
+ cd build.tmp\openvpn*
+ xcopy * ..\..\..\..\%OPENVPN_BUILD_OPENVPN% /E
+ cd ..\..\..\..\%OPENVPN_BUILD_OPENVPN%
+-msbuild openvpn.sln /p:Platform=%OPENVPN_ARCH% /p:Configuration=%RELEASE%
++set OPENVPN_DEPROOT=%TARGET%
++set PLATFORMS=%OPENVPN_ARCH%
++call msvc-build.bat
+ if errorlevel 1 goto error
+ copy %OPENVPN_ARCH%-Output\%RELEASE%\*.exe "%TARGET%\bin"
+ if errorlevel 1 goto error
+-- 
+2.23.0.windows.1
+

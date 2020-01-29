@@ -1,0 +1,146 @@
+From 0d259fd9f291434e762c5cd9e180f482fbda94a8 Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Wed, 6 Mar 2019 00:41:57 +0900
+Subject: [PATCH 02/12] Patch msvc-build.bat and openvpnserv.vcxproj
+
+---
+ msvc-build.bat                              | 10 +++++++---
+ src/openvpnserv/openvpnserv.vcxproj         | 15 ++++++++++----
+ src/openvpnserv/openvpnserv.vcxproj.filters | 22 +++++++++++++++++++--
+ 3 files changed, 38 insertions(+), 9 deletions(-)
+
+diff --git a/msvc-build.bat b/msvc-build.bat
+index fd6d5588..4f46ea20 100644
+--- a/msvc-build.bat
++++ b/msvc-build.bat
+@@ -7,13 +7,17 @@ setlocal ENABLEDELAYEDEXPANSION
+ cd /d %0\..
+ call msvc-env.bat
+ 
+-set PLATFORMS=Win32
+-set CONFIGURATIONS=Release
++if "%PLATFORMS%"=="" set PLATFORMS=Win32
++if "%CONFIGURATIONS%"=="" set CONFIGURATIONS=Release
++if "%TOOLSET%"=="" set TOOLSET=v120
++if "%SDKVERSION%"=="" set SDKVERSION=8.1
+ 
+ if exist "%VCHOME%\vcvarsall.bat" (
+ 	call "%VCHOME%\vcvarsall.bat"
+ ) else if exist "%VCHOME%\bin\vcvars32.bat" (
+ 	call "%VCHOME%\bin\vcvars32.bat"
++) else if exist "%VCHOME%\Auxiliary\Build\vcvars32.bat" (
++	call "%VCHOME%\Auxiliary\Build\vcvars32.bat"
+ ) else (
+ 	echo Cannot detect visual studio
+ 	goto error
+@@ -30,7 +34,7 @@ for %%p in (%PLATFORMS%) do (
+ 			vcbuild /errfile:error.log /showenv "%SOLUTION%" /rebuild /platform:%%p "%%c|%%p"
+ 			for %%f in (error.log) do if %%~zf GTR 0 goto error
+ 		) else  (
+-			msbuild "%SOLUTION%" /p:Configuration="%%c" /p:Platform="%%p"
++			msbuild "%SOLUTION%" /p:Configuration="%%c" /p:Platform="%%p" /p:PlatformToolset="%TOOLSET%" /p:TargetPlatformVersion="%SDKVERSION%" /p:CharacterSet="Unicode"
+ 			if errorlevel 1 goto error
+ 		)
+ 	)
+diff --git a/src/openvpnserv/openvpnserv.vcxproj b/src/openvpnserv/openvpnserv.vcxproj
+index c6760daf..1224fbf5 100644
+--- a/src/openvpnserv/openvpnserv.vcxproj
++++ b/src/openvpnserv/openvpnserv.vcxproj
+@@ -49,7 +49,7 @@
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+     <ClCompile>
+       <Optimization>Disabled</Optimization>
+-      <AdditionalIncludeDirectories>$(SOURCEBASE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>$(SOURCEBASE);$(SOURCEBASE)\include;$(SOURCEBASE)\src\openvpn;$(SOURCEBASE)\src\compat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;$(CPPFLAGS);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <MinimalRebuild>true</MinimalRebuild>
+       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+@@ -66,13 +66,14 @@
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+       <TargetMachine>MachineX86</TargetMachine>
++      <AdditionalDependencies>fwpuclnt.lib;ntdll.lib;shlwapi.lib;netapi32.lib;userenv.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+     <ClCompile>
+       <Optimization>MaxSpeed</Optimization>
+       <IntrinsicFunctions>true</IntrinsicFunctions>
+-      <AdditionalIncludeDirectories>$(SOURCEBASE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>$(SOURCEBASE);$(SOURCEBASE)\include;$(SOURCEBASE)\src\openvpn;$(SOURCEBASE)\src\compat;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;$(CPPFLAGS);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+       <FunctionLevelLinking>true</FunctionLevelLinking>
+@@ -85,19 +86,25 @@
+       <AdditionalIncludeDirectories>$(SOURCEBASE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+     </ResourceCompile>
+     <Link>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+       <TargetMachine>MachineX86</TargetMachine>
++      <AdditionalDependencies>fwpuclnt.lib;ntdll.lib;shlwapi.lib;netapi32.lib;userenv.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemGroup>
+-    <ClCompile Include="openvpnserv.c" />
++    <ClCompile Include="..\openvpn\block_dns.c" />
++    <ClCompile Include="automatic.c" />
++    <ClCompile Include="common.c" />
++    <ClCompile Include="interactive.c" />
+     <ClCompile Include="service.c" />
++    <ClCompile Include="validate.c" />
+   </ItemGroup>
+   <ItemGroup>
++    <ClInclude Include="..\openvpn\block_dns.h" />
+     <ClInclude Include="service.h" />
++    <ClInclude Include="validate.h" />
+   </ItemGroup>
+   <ItemGroup>
+     <ResourceCompile Include="openvpnserv_resources.rc" />
+diff --git a/src/openvpnserv/openvpnserv.vcxproj.filters b/src/openvpnserv/openvpnserv.vcxproj.filters
+index 0c89b4f4..664172b7 100644
+--- a/src/openvpnserv/openvpnserv.vcxproj.filters
++++ b/src/openvpnserv/openvpnserv.vcxproj.filters
+@@ -15,10 +15,22 @@
+     </Filter>
+   </ItemGroup>
+   <ItemGroup>
+-    <ClCompile Include="openvpnserv.c">
++    <ClCompile Include="service.c">
+       <Filter>Source Files</Filter>
+     </ClCompile>
+-    <ClCompile Include="service.c">
++    <ClCompile Include="..\openvpn\block_dns.c">
++      <Filter>Source Files</Filter>
++    </ClCompile>
++    <ClCompile Include="automatic.c">
++      <Filter>Source Files</Filter>
++    </ClCompile>
++    <ClCompile Include="common.c">
++      <Filter>Source Files</Filter>
++    </ClCompile>
++    <ClCompile Include="interactive.c">
++      <Filter>Source Files</Filter>
++    </ClCompile>
++    <ClCompile Include="validate.c">
+       <Filter>Source Files</Filter>
+     </ClCompile>
+   </ItemGroup>
+@@ -26,6 +38,12 @@
+     <ClInclude Include="service.h">
+       <Filter>Header Files</Filter>
+     </ClInclude>
++    <ClInclude Include="..\openvpn\block_dns.h">
++      <Filter>Header Files</Filter>
++    </ClInclude>
++    <ClInclude Include="validate.h">
++      <Filter>Header Files</Filter>
++    </ClInclude>
+   </ItemGroup>
+   <ItemGroup>
+     <ResourceCompile Include="openvpnserv_resources.rc">
+-- 
+2.23.0.windows.1
+

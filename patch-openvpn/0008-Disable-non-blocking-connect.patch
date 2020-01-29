@@ -1,0 +1,30 @@
+From 872b9f67bdf987e9394b698d4a97e284a3a0256b Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Fri, 8 Mar 2019 03:02:48 +0900
+Subject: [PATCH 08/12] Disable non-blocking connect
+
+---
+ src/openvpn/syshead.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/openvpn/syshead.h b/src/openvpn/syshead.h
+index 3ac9d70c..baeb43df 100644
+--- a/src/openvpn/syshead.h
++++ b/src/openvpn/syshead.h
+@@ -661,9 +661,13 @@ socket_defined(const socket_descriptor_t sd)
+ /*
+  * Is non-blocking connect() supported?
+  */
++/* Non-blocking connect has a rubbish poll loop; blocking connect is much faster in practice */
++#undef CONNECT_NONBLOCK
++/*
+ #if defined(HAVE_GETSOCKOPT) && defined(SOL_SOCKET) && defined(SO_ERROR) && defined(EINPROGRESS) && defined(ETIMEDOUT)
+ #define CONNECT_NONBLOCK
+ #endif
++*/
+ 
+ /*
+  * Do we have the capability to support the AUTO_USERID feature?
+-- 
+2.23.0.windows.1
+

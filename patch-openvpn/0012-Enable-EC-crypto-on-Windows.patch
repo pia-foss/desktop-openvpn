@@ -1,0 +1,24 @@
+From 5bf0bc1d57876d927eeaf2504820d939350ae515 Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Wed, 15 Jan 2020 21:39:28 -0500
+Subject: [PATCH 12/12] Enable EC crypto on Windows
+
+---
+ config-msvc.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/config-msvc.h b/config-msvc.h
+index 3fdb73cb..b4d76b03 100644
+--- a/config-msvc.h
++++ b/config-msvc.h
+@@ -113,7 +113,6 @@
+ #define HAVE_RSA_METH_SET0_APP_DATA 1
+ #define HAVE_RSA_METH_GET0_APP_DATA 1
+ #define HAVE_EC_GROUP_ORDER_BITS 1
+-#define OPENSSL_NO_EC 1
+ #define HAVE_EVP_CIPHER_CTX_RESET 1
+ 
+ #define PATH_SEPARATOR     '\\'
+-- 
+2.23.0.windows.1
+

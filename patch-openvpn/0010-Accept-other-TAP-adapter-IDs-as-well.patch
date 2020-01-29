@@ -1,0 +1,25 @@
+From 8fbd943becbdce7ce988d0b7c8ee04738a10b3c0 Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Fri, 8 Mar 2019 03:03:42 +0900
+Subject: [PATCH 10/12] Accept other TAP adapter IDs as well
+
+---
+ src/openvpn/tun.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/openvpn/tun.c b/src/openvpn/tun.c
+index 80eaa2c4..959ecb23 100644
+--- a/src/openvpn/tun.c
++++ b/src/openvpn/tun.c
+@@ -3701,6 +3701,8 @@ get_tap_reg(struct gc_arena *gc)
+                 if (status == ERROR_SUCCESS && data_type == REG_SZ)
+                 {
+                     if (!strcmp(component_id, TAP_WIN_COMPONENT_ID) ||
++                        !strcmp(component_id, "tap-pia-0901") ||
++                        !strcmp(component_id, "root\\tap-pia-0901") ||
+                         !strcmp(component_id, "root\\" TAP_WIN_COMPONENT_ID))
+                     {
+                         struct tap_reg *reg;
+-- 
+2.23.0.windows.1
+

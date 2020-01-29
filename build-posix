@@ -12,52 +12,13 @@ __base="$(basename ${__file} .sh)"
 
 die() { echo "${__base}:" "$*" 1>&2 ; exit 1; }
 
-print_usage() {
-	cat <<-EOF
-                Usage: $0 [OPTIONS]
-		  --platform PLATFORM        specify target OS, where PLATFORM is one of:
-                                             linux32, linux64, macos, host
-                                             (default: host)
-
-	EOF
-}
-
-cd ${__dir}
-
-while (( "$#" )); do
-	case "$1" in
-		--platform)
-			platform="$2"
-			shift
-			;;
-		--platform=*)
-			platform="${1#*=}"
-                        ;;
-		--verbose | -v)
-			;;
-		--help)
-			print_usage
-			exit 0
-			;;
-                *)
-                        die "Unknown option \"$1\""
-                        ;;
-	esac
-	shift
-done
+cd "${__dir}"
 
 case "$(uname)" in
 	Linux)
 		case "$(uname -m)" in
 			x86) host_platform=linux32 ;;
 			x86_64) host_platform=linux64 ;;
-			*) die "Unsupported host platform" ;;
-		esac
-		;;
-	FreeBSD)
-		case "$(uname -m)" in
-			x86) host_platform=freebsd32 ;;
-			x86_64) host_platform=freebsd64 ;;
 			*) die "Unsupported host platform" ;;
 		esac
 		;;
@@ -70,15 +31,16 @@ case "$(uname)" in
 		die "Unsupported host platform"
 		;;
 esac
-[ -n "${platform}" ] || platform="host"
-[ "${platform}" = "host" ] && actual_platform="${host_platform}" || actual_platform="${platform}"
+
+platform="$host_platform"
+actual_platform="$host_platform"
 
 openvpn_version="pia"
 openvpn_directory="${__dir}/build.tmp/openvpn-${openvpn_version}"
 openvpn_build_directory="${__dir}/build.tmp/openvpn-build"
 
 # To build with 1.1.0j; also remove the line later that deletes the 1.1.0j patch
-openssl_version="1.0.2p"
+openssl_version="1.1.1d"
 
 output_directory="${__dir}/out/build/${platform}"
 artifacts_dir="${__dir}/out/artifacts/${platform}"
@@ -102,13 +64,7 @@ case "${actual_platform}" in
 		export EXTRA_OPENSSL_CONFIG="-m64"
 		export OPENSSL_FORCE64BIT=1
 		;;
-	freebsd32)
-		;;
-	freebsd64)
-		die "Still unsupported"
-		;;
 	macos)
-		[ "$(uname)" = "Darwin" ] || die "Cross compilation to macOS not supported"
 		export DO_REALLY_STATIC=1
                 ;;
 	*)
@@ -183,9 +139,42 @@ echo "Building OpenVPN..."
 rm -rf "${openvpn_build_directory}/generic/tmp"
 ( cd "${openvpn_build_directory}/generic" && IMAGEROOT="${output_directory}" PIA_PLATFORM="${actual_platform}" ./build )
 
-cp "${output_directory}/openvpn/sbin/openvpn" "${artifacts_dir}/pia-openvpn"
+case "$platform" in
+    linux*)
+        mkdir -p "$artifacts_dir/bin"
+        mkdir -p "$artifacts_dir/lib"
+        cp "${output_directory}/openvpn/sbin/openvpn" "${artifacts_dir}/bin/pia-openvpn"
+        cp "${output_directory}/openvpn/lib"/*.so.1.1 "${artifacts_dir}/lib/"
+        pushd "${artifacts_dir}/lib"
+        ln -s libssl.so.1.1 libssl.so
+        ln -s libcrypto.so.1.1 libcrypto.so
+        popd
+
+        # Patch rpaths - there's no point trying to set these in the proper build,
+        # the build scripts can't handle the dollar sign
+        chmod u+w "${artifacts_dir}/lib"/*.so.1.1
+        patchelf --force-rpath --set-rpath '$ORIGIN/../lib/' "${artifacts_dir}/bin/pia-openvpn"
+        patchelf --force-rpath --set-rpath '$ORIGIN/' "${artifacts_dir}/lib/libssl.so.1.1"
+        patchelf --force-rpath --set-rpath '$ORIGIN/' "${artifacts_dir}/lib/libcrypto.so.1.1"
+        ;;
+    macos)
+        cp "${output_directory}/openvpn/sbin/openvpn" "${artifacts_dir}/pia-openvpn"
+        cp "${output_directory}/openvpn/lib/"*.1.1.dylib "${artifacts_dir}/"
+        chmod u+w "${artifacts_dir}/"*.dylib
+        install_name_tool -change "////libssl.1.1.dylib" "@loader_path/libssl.1.1.dylib" "${artifacts_dir}/pia-openvpn"
+        install_name_tool -change "////libcrypto.1.1.dylib" "@loader_path/libcrypto.1.1.dylib" "${artifacts_dir}/pia-openvpn"
+        install_name_tool -change "////libssl.1.1.dylib" "@loader_path/libssl.1.1.dylib" "${artifacts_dir}/libcrypto.1.1.dylib"
+        install_name_tool -change "////libcrypto.1.1.dylib" "@loader_path/libcrypto.1.1.dylib" "${artifacts_dir}/libcrypto.1.1.dylib"
+        install_name_tool -change "////libssl.1.1.dylib" "@loader_path/libssl.1.1.dylib" "${artifacts_dir}/libssl.1.1.dylib"
+        install_name_tool -change "////libcrypto.1.1.dylib" "@loader_path/libcrypto.1.1.dylib" "${artifacts_dir}/libssl.1.1.dylib"
+        ;;
+esac
 
 # Done!
 echo "Build completed:"
-ls -ld "${artifacts_dir}"
+ls -l "${artifacts_dir}"
+for dir in "${artifacts_dir}"/*/; do
+  [ -d "$dir" ] && ls -l "$dir"
+done
+
 exit 0

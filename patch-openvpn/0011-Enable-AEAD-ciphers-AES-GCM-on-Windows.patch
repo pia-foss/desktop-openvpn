@@ -1,0 +1,24 @@
+From 6259630809d37c2266d60e12a118b0bfb4dd763c Mon Sep 17 00:00:00 2001
+From: Jonathon Hall <jhall@londontrustmedia.com>
+Date: Fri, 22 Mar 2019 09:21:21 -0400
+Subject: [PATCH 11/12] Enable AEAD ciphers (AES-*-GCM) on Windows
+
+---
+ config-msvc.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/config-msvc.h b/config-msvc.h
+index 0381b7cc..3fdb73cb 100644
+--- a/config-msvc.h
++++ b/config-msvc.h
+@@ -6,6 +6,7 @@
+ #define ENABLE_PF 1
+ #define ENABLE_CRYPTO 1
+ #define ENABLE_CRYPTO_OPENSSL 1
++#define HAVE_AEAD_CIPHER_MODES 1
+ #define ENABLE_DEBUG 1
+ #define ENABLE_EUREPHIA 1
+ #define ENABLE_FRAGMENT 1
+-- 
+2.23.0.windows.1
+
