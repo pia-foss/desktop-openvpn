@@ -39,8 +39,7 @@ openvpn_version="pia"
 openvpn_directory="${__dir}/build.tmp/openvpn-${openvpn_version}"
 openvpn_build_directory="${__dir}/build.tmp/openvpn-build"
 
-# To build with 1.1.0j; also remove the line later that deletes the 1.1.0j patch
-openssl_version="1.1.1d"
+openssl_version="1.1.1g"
 
 output_directory="${__dir}/out/build/${platform}"
 artifacts_dir="${__dir}/out/artifacts/${platform}"
@@ -111,9 +110,6 @@ export OPENVPN_VERSION="${openvpn_version}"
 export OPENSSL_VERSION="${openssl_version}"
 # Extra openvpn-build options
 export EXTRA_OPENVPN_CONFIG="--enable-password-save --enable-management --disable-server --disable-debug --disable-silent-rules --disable-plugins --disable-plugin-auth-pam --disable-plugin-down-root"
-
-# Remove patch for OpenSSL 1.1.0j (building with 1.0.2p currently)
-rm -f "${openvpn_build_directory}/generic/patches/openssl-1.1.0j-issue7653.patch"
 
 # Configure openvpn-build
 echo "Configuring OpenVPN build..."
